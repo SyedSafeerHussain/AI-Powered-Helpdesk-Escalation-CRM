@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Helpdesk — Open a Ticket</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1B2430;
+    --ink-soft:#2A3543;
+    --paper:#EFE7D8;
+    --paper-hi:#F7F3E9;
+    --stamp:#C1443A;
+    --stamp-dark:#9C3830;
+    --line:#B9AF97;
+    --queue:#3D6B5C;
+    --queue-hi:#4F8A76;
+    --err:#B5433A;
+    --radius:2px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'IBM Plex Sans', sans-serif;
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:32px 16px;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.01ms !important; transition-duration:0.01ms !important;}
+  }
+
+  .desk{
+    width:100%;
+    max-width:980px;
+    background:var(--paper-hi);
+    border-radius:6px;
+    box-shadow:0 30px 60px -25px rgba(27,36,48,0.35), 0 2px 0 rgba(27,36,48,0.05);
+    display:grid;
+    grid-template-columns:340px 1fr;
+    overflow:hidden;
+    min-height:560px;
+  }
+  @media (max-width:760px){
+    .desk{grid-template-columns:1fr; min-height:0;}
+  }
+
+  /* ===== STUB (signature element) ===== */
+  .stub{
+    background:linear-gradient(160deg, var(--ink) 0%, var(--ink-soft) 100%);
+    color:var(--paper);
+    padding:34px 28px 28px;
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    min-height:100%;
+  }
+  .stub-eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.28em;
+    text-transform:uppercase;
+    color:var(--line);
+    margin:0 0 6px;
+  }
+  .stub-title{
+    font-family:'Roboto Slab', serif;
+    font-weight:700;
+    font-size:26px;
+    line-height:1.15;
+    margin:0 0 22px;
+    color:var(--paper-hi);
+  }
+
+  .stamp-wrap{
+    width:118px;
+    height:118px;
+    margin:4px auto 22px;
+    position:relative;
+  }
+  .stamp-ring{
+    width:100%;
+    height:100%;
+    border-radius:50%;
+    border:2.5px dashed rgba(239,231,216,0.35);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:border-color 0.4s ease;
+  }
+  .stamp-status{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12.5px;
+    letter-spacing:0.12em;
+    text-align:center;
+    color:var(--line);
+    transition:color 0.3s ease;
+  }
+  .stamp-wrap.sent .stamp-ring{
+    border-color:var(--stamp);
+    border-style:solid;
+    animation:stampland 0.5s cubic-bezier(.2,1.4,.4,1);
+  }
+  .stamp-wrap.sent .stamp-status{
+    color:var(--paper-hi);
+    font-weight:500;
+  }
+  .stamp-wrap.pending .stamp-ring{ border-color: var(--queue-hi); }
+  .stamp-wrap.error .stamp-ring{ border-color: var(--err); border-style:solid; }
+  .stamp-wrap.error .stamp-status{ color: #E7B4AE; }
+  @keyframes stampland{
+    0%{ transform:scale(1.5) rotate(-14deg); opacity:0; }
+    60%{ transform:scale(0.94) rotate(-6deg); opacity:1; }
+    100%{ transform:scale(1) rotate(-6deg); }
+  }
+  .stamp-wrap.sent .stamp-ring{ transform:rotate(-6deg); }
+
+  .ticket-no-label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    letter-spacing:0.2em;
+    text-transform:uppercase;
+    color:var(--line);
+    text-align:center;
+    margin:0 0 4px;
+  }
+  .ticket-no{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:22px;
+    text-align:center;
+    color:var(--paper-hi);
+    letter-spacing:0.06em;
+    margin:0 0 20px;
+  }
+  .ticket-no.placeholder{ color:rgba(239,231,216,0.3); }
+
+  /* perforation */
+  .perf{
+    display:flex;
+    gap:6px;
+    margin:4px 0 20px;
+    overflow:hidden;
+  }
+  .perf span{
+    width:6px; height:6px; border-radius:50%;
+    background:var(--paper);
+    flex:0 0 auto;
+    opacity:0.18;
+  }
+
+  .stub-preview{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--line);
+    line-height:1.7;
+    flex:1;
+  }
+  .stub-preview .row{ margin-bottom:10px; word-break:break-word; }
+  .stub-preview .k{
+    text-transform:uppercase;
+    letter-spacing:0.14em;
+    font-size:10px;
+    color:rgba(185,175,151,0.7);
+    display:block;
+  }
+  .stub-preview .v{
+    color:var(--paper-hi);
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:13.5px;
+  }
+  .stub-preview .v.empty{ color:rgba(239,231,216,0.28); font-family:'IBM Plex Mono', monospace; font-size:12px; }
+
+  .stub-foot{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    color:rgba(185,175,151,0.55);
+    margin-top:18px;
+    letter-spacing:0.02em;
+  }
+
+  /* ===== FORM PANEL ===== */
+  .panel{
+    padding:40px 44px;
+    display:flex;
+    flex-direction:column;
+  }
+  @media (max-width:760px){ .panel{ padding:30px 26px; } }
+
+  .panel h1{
+    font-family:'Roboto Slab', serif;
+    font-weight:700;
+    font-size:24px;
+    margin:0 0 6px;
+    color:var(--ink);
+  }
+  .panel .sub{
+    margin:0 0 28px;
+    font-size:14px;
+    color:#5B5142;
+  }
+
+  form{ display:flex; flex-direction:column; gap:18px; }
+  .field{ display:flex; flex-direction:column; gap:7px; }
+  .field-row{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:520px){ .field-row{ grid-template-columns:1fr; } }
+
+  label{
+    font-size:11.5px;
+    text-transform:uppercase;
+    letter-spacing:0.12em;
+    color:#6B6252;
+    font-weight:600;
+  }
+  input, textarea{
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:15px;
+    color:var(--ink);
+    background:transparent;
+    border:none;
+    border-bottom:1.5px solid var(--line);
+    padding:8px 2px;
+    outline:none;
+    transition:border-color 0.2s ease;
+    resize:none;
+  }
+  input::placeholder, textarea::placeholder{ color:#A69C88; }
+  input:focus, textarea:focus{ border-bottom-color:var(--queue); }
+  textarea{ min-height:96px; line-height:1.5; }
+
+  .field.invalid input, .field.invalid textarea{ border-bottom-color:var(--err); }
+  .field-error{
+    font-size:11.5px;
+    color:var(--err);
+    min-height:14px;
+    font-family:'IBM Plex Mono', monospace;
+  }
+
+  .submit-row{
+    display:flex;
+    align-items:center;
+    gap:16px;
+    margin-top:8px;
+  }
+  button.send{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--paper-hi);
+    background:var(--stamp);
+    border:none;
+    padding:13px 26px;
+    border-radius:var(--radius);
+    cursor:pointer;
+    transition:background 0.15s ease, transform 0.1s ease;
+  }
+  button.send:hover{ background:var(--stamp-dark); }
+  button.send:active{ transform:scale(0.98); }
+  button.send:disabled{ background:#C9BEB0; cursor:not-allowed; }
+
+  .send-note{
+    font-size:12.5px;
+    color:#6B6252;
+    font-family:'IBM Plex Mono', monospace;
+  }
+  .send-note.err{ color:var(--err); }
+  .send-note.ok{ color:var(--queue); }
+
+  .dots::after{
+    content:'';
+    display:inline-block;
+    animation:dots 1.2s steps(4,end) infinite;
+  }
+  @keyframes dots{
+    0%{content:'';} 25%{content:'.';} 50%{content:'..';} 75%{content:'...';} 100%{content:'';}
+  }
+
+  :focus-visible{ outline:2px solid var(--queue); outline-offset:2px; }
+</style>
+</head>
+<body>
+
+<div class="desk">
+
+  <!-- Ticket stub: live preview + status -->
+  <aside class="stub">
+    <p class="stub-eyebrow">Helpdesk</p>
+    <h2 class="stub-title">Ticket<br/>stub</h2>
+
+    <div class="stamp-wrap pending" id="stampWrap">
+      <div class="stamp-ring">
+        <div class="stamp-status" id="stampStatus">Queued</div>
+      </div>
+    </div>
+
+    <p class="ticket-no-label">Ticket No.</p>
+    <p class="ticket-no placeholder" id="ticketNo">— — — —</p>
+
+    <div class="perf" aria-hidden="true">
+      <span></span><span></span><span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span><span></span><span></span>
+    </div>
+
+    <div class="stub-preview">
+      <div class="row">
+        <span class="k">From</span>
+        <span class="v empty" id="prevName">not yet filled in</span>
+      </div>
+      <div class="row">
+        <span class="k">Subject</span>
+        <span class="v empty" id="prevSubject">not yet filled in</span>
+      </div>
+      <div class="row">
+        <span class="k">Contact</span>
+        <span class="v empty" id="prevEmail">not yet filled in</span>
+      </div>
+    </div>
+
+    <p class="stub-foot">Keep this stub — your ticket number lets us look up the conversation.</p>
+  </aside>
+
+  <!-- Form -->
+  <main class="panel">
+    <h1>Open a support ticket</h1>
+    <p class="sub">Tell us what's going on. We'll email you once someone picks it up.</p>
+
+    <form id="ticketForm" novalidate>
+      <div class="field-row">
+        <div class="field" id="fieldName">
+          <label for="customer_name">Your name</label>
+          <input type="text" id="customer_name" name="customer_name" placeholder="Jordan Lee" autocomplete="name" required />
+          <div class="field-error"></div>
+        </div>
+        <div class="field" id="fieldEmail">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" placeholder="you@example.com" autocomplete="email" required />
+          <div class="field-error"></div>
+        </div>
+      </div>
+
+      <div class="field" id="fieldSubject">
+        <label for="subject">Subject</label>
+        <input type="text" id="subject" name="subject" placeholder="Can't log in to my account" required />
+        <div class="field-error"></div>
+      </div>
+
+      <div class="field" id="fieldMessage">
+        <label for="message">Message</label>
+        <textarea id="message" name="message" placeholder="Give us the details — what happened, and what you expected instead." required></textarea>
+        <div class="field-error"></div>
+      </div>
+
+      <div class="submit-row">
+        <button type="submit" class="send" id="sendBtn">Send ticket</button>
+        <span class="send-note" id="sendNote"></span>
+      </div>
+    </form>
+  </main>
+
+</div>
+
+<script>
+  // Point this at wherever your FastAPI app is running.
+  const API_BASE = "http://127.0.0.1:8000";
+
+  const form = document.getElementById('ticketForm');
+  const sendBtn = document.getElementById('sendBtn');
+  const sendNote = document.getElementById('sendNote');
+
+  const nameInput = document.getElementById('customer_name');
+  const emailInput = document.getElementById('email');
+  const subjectInput = document.getElementById('subject');
+  const messageInput = document.getElementById('message');
+
+  const prevName = document.getElementById('prevName');
+  const prevSubject = document.getElementById('prevSubject');
+  const prevEmail = document.getElementById('prevEmail');
+
+  const stampWrap = document.getElementById('stampWrap');
+  const stampStatus = document.getElementById('stampStatus');
+  const ticketNo = document.getElementById('ticketNo');
+
+  function bindPreview(input, el, fallback){
+    input.addEventListener('input', () => {
+      const val = input.value.trim();
+      if (val){
+        el.textContent = val;
+        el.classList.remove('empty');
+      } else {
+        el.textContent = fallback;
+        el.classList.add('empty');
+      }
+    });
+  }
+  bindPreview(nameInput, prevName, 'not yet filled in');
+  bindPreview(subjectInput, prevSubject, 'not yet filled in');
+  bindPreview(emailInput, prevEmail, 'not yet filled in');
+
+  function setFieldError(fieldId, msg){
+    const field = document.getElementById(fieldId);
+    field.classList.toggle('invalid', !!msg);
+    field.querySelector('.field-error').textContent = msg || '';
+  }
+
+  function validate(){
+    let ok = true;
+    if (!nameInput.value.trim()){ setFieldError('fieldName', 'Required'); ok = false; }
+    else setFieldError('fieldName', '');
+
+    const email = emailInput.value.trim();
+    if (!email){ setFieldError('fieldEmail', 'Required'); ok = false; }
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ setFieldError('fieldEmail', 'Doesn\'t look like a valid email'); ok = false; }
+    else setFieldError('fieldEmail', '');
+
+    if (!subjectInput.value.trim()){ setFieldError('fieldSubject', 'Required'); ok = false; }
+    else setFieldError('fieldSubject', '');
+
+    if (!messageInput.value.trim()){ setFieldError('fieldMessage', 'Required'); ok = false; }
+    else setFieldError('fieldMessage', '');
+
+    return ok;
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!validate()) return;
+
+    sendBtn.disabled = true;
+    sendNote.className = 'send-note';
+    sendNote.innerHTML = 'Sending<span class="dots"></span>';
+    stampWrap.className = 'stamp-wrap pending';
+    stampStatus.textContent = 'Sending';
+
+    const payload = {
+      customer_name: nameInput.value.trim(),
+      email: emailInput.value.trim(),
+      subject: subjectInput.value.trim(),
+      message: messageInput.value.trim(),
+    };
+
+    try {
+      const res = await fetch(`${API_BASE}/new_query`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok){
+        const text = await res.text();
+        throw new Error(text || `Server responded with ${res.status}`);
+      }
+
+      const data = await res.json();
+
+      ticketNo.textContent = `#${data.ticket_id}`;
+      ticketNo.classList.remove('placeholder');
+      stampWrap.className = 'stamp-wrap sent';
+      stampStatus.textContent = 'Received';
+      sendNote.className = 'send-note ok';
+      sendNote.textContent = `Ticket #${data.ticket_id} logged — we'll email ${payload.email}.`;
+      form.reset();
+      [prevName, prevSubject, prevEmail].forEach(el => {
+        el.textContent = 'not yet filled in';
+        el.classList.add('empty');
+      });
+    } catch (err){
+      stampWrap.className = 'stamp-wrap error';
+      stampStatus.textContent = 'Not sent';
+      sendNote.className = 'send-note err';
+      sendNote.textContent = `Couldn't reach the helpdesk — ${err.message}`;
+    } finally {
+      sendBtn.disabled = false;
+    }
+  });
+</script>
+
+</body>
+</html>

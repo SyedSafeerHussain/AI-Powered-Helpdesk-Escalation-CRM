@@ -1,0 +1,357 @@
+{
+  "name": "CRM",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "30f43367-8e70-419c-9873-144b9d8a3aba",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -96,
+        0
+      ],
+      "id": "81b6021c-97e9-4602-a650-211c1bc96343",
+      "name": "Webhook",
+      "webhookId": "30f43367-8e70-419c-9873-144b9d8a3aba"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an AI customer support analyzer. Your job is to read the incoming customer ticket and determine the customer's sentiment.\n\nCustomer Name: {{ $json.body.customer_name }}\nSubject: {{ $json.body.subject }}\nMessage: {{ $json.body.message }}\n\nAnalyze the tone of the message and subject. \nIf the user is expressing frustration, annoyance, or anger, classify the sentiment as \"angry\". \nOtherwise, classify it as \"neutral\".",
+        "hasOutputParser": true,
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        208,
+        0
+      ],
+      "id": "6647c1c0-233e-4fea-8961-caec3d9856db",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"sentiment\": \"neutral\",\n  \"urgency\": \"low\",\n  \"is_spam\": false\n}",
+        "autoFix": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        352,
+        208
+      ],
+      "id": "d8e5a81a-4b16-4323-82d6-85b7ab410e86",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "model": "llama-3.1-8b-instant",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        96,
+        208
+      ],
+      "id": "9ceca17f-0566-431c-bc86-2d0c0114e0ea",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "3FmTHGnlHN86YcMz",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "0f47a4df-8060-4642-b638-89ccb2bfbf91",
+              "leftValue": "={{ $json.output.sentiment }}",
+              "rightValue": "angry",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        560,
+        0
+      ],
+      "id": "31370a75-2dcd-4994-a04d-257cb24db06f",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "fromEmail": "safeerhussainemail@gmail.com",
+        "toEmail": "=safeerx.dev@gmail.com",
+        "subject": "=URGENT: Angry Customer Escalation - Ticket #{{ $('Webhook').item.json.body.ticket_id }}",
+        "html": "=Attention: A customer is highly frustrated.\n\nCustomer: {{ $('Webhook').item.json.body.customer_name }}\nSubject: {{ $('Webhook').item.json.body.subject }}\nMessage: {{ $('Webhook').item.json.body.message }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        768,
+        -96
+      ],
+      "id": "233a6b14-9a2b-4400-ac7f-940e68294043",
+      "name": "Send an Email",
+      "webhookId": "d6e082aa-f216-4dd4-8ba2-21a779c8c7ef",
+      "credentials": {
+        "smtp": {
+          "id": "NORwcF1ofVRnpsfY",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Read this customer ticket and write a polite, helpful email response attempting to solve their issue.\nCustomer Query: {{ $('Webhook').item.json.body.message }}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        688,
+        96
+      ],
+      "id": "6582a93b-c5ad-44be-a453-1d2e29f9ef94",
+      "name": "Basic LLM Chain1"
+    },
+    {
+      "parameters": {
+        "fromEmail": "safeerhussainemail@gmail.com",
+        "toEmail": "={{ $('Webhook').item.json.body.email }}",
+        "subject": "={{ $('Webhook').item.json.body.subject }}",
+        "html": "={{ $json.text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1040,
+        96
+      ],
+      "id": "79855f4a-b529-4845-8ad7-b91e506b87f4",
+      "name": "Send an Email1",
+      "webhookId": "5656d493-af49-4c1a-b940-019409bde042",
+      "credentials": {
+        "smtp": {
+          "id": "NORwcF1ofVRnpsfY",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE tickets \nSET status = 'Escalated' \nWHERE id = {{ $('Webhook').item.json.body.ticket_id }};",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        976,
+        -96
+      ],
+      "id": "1710b665-ab3e-40cb-821a-bf5fbde61051",
+      "name": "Execute a SQL query",
+      "credentials": {
+        "postgres": {
+          "id": "x5dougi054hsMaO4",
+          "name": "Postgres account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE tickets \nSET status = 'Resolved' \nWHERE id = {{ $('Webhook').item.json.body.ticket_id }};",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1232,
+        96
+      ],
+      "id": "b05cce8d-3591-42ee-b98f-9fc8ed6ac81c",
+      "name": "Execute a SQL query1",
+      "credentials": {
+        "postgres": {
+          "id": "x5dougi054hsMaO4",
+          "name": "Postgres account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "llama-3.1-8b-instant",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        624,
+        304
+      ],
+      "id": "d8197938-1155-4fd1-802c-fc90fdc92c17",
+      "name": "Groq Chat Model1",
+      "credentials": {
+        "groqApi": {
+          "id": "3FmTHGnlHN86YcMz",
+          "name": "Groq account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Structured Output Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send an Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain1": {
+      "main": [
+        [
+          {
+            "node": "Send an Email1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send an Email": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send an Email1": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "cf09b52d-b370-4c6a-8ef8-131171d5b902",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c17fbe25f40548a83eb5df27039f2022f36170a68c86c5b95770f9b223474366"
+  },
+  "nodeGroups": [],
+  "id": "x4MqQr9hRRuls3H1",
+  "tags": []
+}
