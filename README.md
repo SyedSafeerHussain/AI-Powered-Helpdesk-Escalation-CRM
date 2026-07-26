@@ -11,7 +11,7 @@ This project is an automated, event-driven Customer Relationship Management (CRM
 
 ### 2. The Orchestration Engine (n8n Workflow)
 *The core automation pipeline handling webhook ingestion, LLM inference, decision branching, and stateful database updates.*
-![n8n Architecture](./assets/n8n_workflow.png)
+![n8n Architecture](./assets/n8n.png)
 
 ### 3. The Single Source of Truth (PostgreSQL Database)
 *Ticket states updated dynamically by the pipeline (`Pending`, `Resolved`, `Escalated`).*
